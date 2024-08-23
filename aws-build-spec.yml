@@ -1,0 +1,29 @@
+version: 0.2
+
+run-as: root
+
+phases:
+  install:
+    runtime-versions:
+      python: latest
+      java: latest
+    commands:
+      - export CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain $EXPORT_CODE_DOMAIN --domain-owner $EXPORT_CODE_DOMAIN_OWNER --query authorizationToken --output text`
+      - export CODEARTIFACT_REPO=`aws codeartifact get-repository-endpoint --domain $EXPORT_CODE_DOMAIN --repository $EXPORT_CODE_ARTIFACT_REPO --format maven --output text`
+      - echo "Logging in to Amazon ECR..."
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $EXPORT_CODE_DOMAIN_OWNER.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - export YOUR_PROJECT_SCRIPT_ROOT=$CODEBUILD_SRC_DIR_CICD_TOOLING/aws
+      - export PATH=$PATH:$YOUR_PROJECT_SCRIPT_ROOT/commands
+      - cd $CODEBUILD_SRC_DIR
+      - export GIT_COMMIT_ID=$(git rev-parse --short HEAD)
+      - export IMAGE_TAG="x${GIT_COMMIT_ID}-${CODEBUILD_BUILD_NUMBER}"
+  #      - project-build preinstall_dependencies_with_kubernetes
+  build:
+    commands:
+      - echo "Building image"
+      - project-build build_docker_image
+
+  post_build:
+    commands:
+      - echo "Exporting service to elastic cloud registry"
+      - project-build export_service_to_ecr $IMAGE_TAG
