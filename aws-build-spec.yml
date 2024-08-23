@@ -25,5 +25,5 @@ phases:
 
   post_build:
     commands:
-      - echo "Exporting service to elastic cloud registry"
+      - echo "Exporting service to elastic container registry"
       - project-build export_service_to_ecr $IMAGE_TAG
