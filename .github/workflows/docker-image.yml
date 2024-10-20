@@ -37,4 +37,3 @@ jobs:
           build-args: |
             VERSION=${{ github.sha }}
             COMMIT=${{ github.sha }}
-          visibility: public # ensure the image is public
